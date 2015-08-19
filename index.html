@@ -23,7 +23,7 @@
 		<script src="browser.js"></script>
 		<script>
 			document.querySelector('#download-btn').addEventListener('click', function (e) {
-				var files = e.target.dataset.files.split(' ');
+				var files = e.target.getAttribute('data-files').split(' ');
 				multiDownload(files);
 			});
 		</script>
