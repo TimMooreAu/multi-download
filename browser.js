@@ -34,6 +34,11 @@ function isFirefox() {
 	return /Firefox\//i.test(navigator.userAgent);
 }
 
+function isAndroidBrowser() {
+	var ua = navigator.userAgent;
+	return ((ua.indexOf('Mozilla/5.0') > -1 && ua.indexOf('Android ') > -1 && ua.indexOf('AppleWebKit') > -1) && (ua.indexOf('Version') > -1));
+}
+
 function sameDomain(url) {
 	var a = document.createElement('a');
 	a.href = url;
@@ -46,25 +51,43 @@ function download(url) {
 	a.download = '';
 	a.href = url;
 	// firefox doesn't support `a.click()`...
-	a.dispatchEvent(new MouseEvent('click'));
+	fullClickEvent(a);
+}
+
+// DOM 2 Events
+var dispatchMouseEvent = function(target, var_args) {
+	var e = document.createEvent("MouseEvents");
+	// If you need clientX, clientY, etc., you can call
+	// initMouseEvent instead of initEvent
+	e.initEvent.apply(e, Array.prototype.slice.call(arguments, 1));
+	target.dispatchEvent(e);
+};
+
+function fullClickEvent(element) {
+	dispatchMouseEvent(element, 'mouseover', true, true);
+	dispatchMouseEvent(element, 'mousedown', true, true);
+	dispatchMouseEvent(element, 'click', true, true);
+	dispatchMouseEvent(element, 'mouseup', true, true);
 }
 
 module.exports = function (urls) {
 	if (!urls) {
 		throw new Error('`urls` required');
 	}
+	
+	// pass each file through download script to force header
+	urls = urls.map(function(i) {return "download.php?file=" + i;});
 
-	if (typeof document.createElement('a').download === 'undefined') {
-		// pass each file through download script to force header
-		urls = urls.map(function(i) {return "download.php?file=" + i;});
+	if ((typeof document.createElement('a').download === 'undefined') && !isAndroidBrowser()){
 		return fallback(urls);
 	}
 
 	var delay = 0;
 
 	urls.forEach(function (url) {
-		// the download init has to be sequential for firefox if the urls are not on the same domain
-		if (isFirefox() && !sameDomain(url)) {
+		// the download init has to be sequential for firefox if the urls are not on the same domain,
+		// or for the android browser
+		if ((isFirefox() && !sameDomain(url)) || isAndroidBrowser()) {
 			return setTimeout(download.bind(null, url), 100 * ++delay);
 		}
 
