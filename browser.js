@@ -3,7 +3,7 @@
 
 function fallback(urls) {
 	var i = 0;
-
+	
 	(function createIframe() {
 		var frame = document.createElement('iframe');
 		frame.style.display = 'none';
@@ -12,7 +12,8 @@ function fallback(urls) {
 
 		// the download init has to be sequential otherwise IE only use the first
 		var interval = setInterval(function () {
-			if (frame.contentWindow.document.readyState === 'complete') {
+			if (frame.contentWindow.document.readyState === 'complete' ||
+				frame.contentWindow.document.readyState === "interactive") {
 				clearInterval(interval);
 
 				// Safari needs a timeout
@@ -54,6 +55,8 @@ module.exports = function (urls) {
 	}
 
 	if (typeof document.createElement('a').download === 'undefined') {
+		// pass each file through download script to force header
+		urls = urls.map(function(i) {return "download.php?file=" + i;});
 		return fallback(urls);
 	}
 
